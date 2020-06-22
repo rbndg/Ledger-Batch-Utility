@@ -1,0 +1,21 @@
+{
+  "name": "ledger-dash",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ledgerhq/hw-app-btc": "^5.17.0",
+    "@ledgerhq/hw-transport-node-hid": "^5.17.0",
+    "@ledgerhq/ledger-core": "^6.5.4",
+    "@ledgerhq/live-common": "^12.34.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-redux": "^7.2.0",
+    "rxjs": "^6.5.5"
+  }
+}
