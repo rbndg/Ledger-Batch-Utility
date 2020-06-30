@@ -1,3 +1,5 @@
+'use strict'
+
 const { first, map, reduce, tap } = require('rxjs/operators')
 const fs = require('fs')
 const { createInterface } = require('readline')

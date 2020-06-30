@@ -1,3 +1,5 @@
+'use strict'
+
 const Transport = require('@ledgerhq/hw-transport-node-hid').default
 const AppBtc = require('@ledgerhq/hw-app-btc').default
 const fs = require('fs')
