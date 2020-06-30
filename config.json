@@ -1,8 +1,0 @@
-{
-  "currency": "dash",
-  "amount": "0.00001",
-  "name": "Dash 1",
-  "filePath": "./Ledger-Dash-1592807491049",
-  "hd_path": "44'/5'/0'/0/1",
-  "generate_amount": 5
-}
