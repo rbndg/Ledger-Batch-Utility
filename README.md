@@ -11,7 +11,7 @@ You need to have `yarn` installed.
 5. Finished
 
 ## Address Generation: `node gen-address.js`
-Generate many addresses from a HD path
+Generate many addresses from a HD path and saves to file
 
 ## Mass transaction: `node send.js`
 Send a set amount coins from ledger to a list of addresses.
