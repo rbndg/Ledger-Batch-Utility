@@ -37,8 +37,13 @@ console.log(`HD Path : ${HD_PATH}${index}`)
 createLedger()
   .then(async (ledger) => {
     console.log('Opened Ledger....')
-    for (index; index < TOTAL; index++) {
-      await createAddress(ledger, index)
+    try {
+      for (index; index < TOTAL; index++) {
+        await createAddress(ledger, index)
+      }
+    } catch (err) {
+      console.log(err)
     }
+
     console.log('Finished')
   })
