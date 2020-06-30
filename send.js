@@ -1,34 +1,17 @@
 const { first, map, reduce, tap } = require('rxjs/operators')
 const fs = require('fs')
-var readline = require('readline')
-var rl = readline.createInterface(process.stdin, process.stdout)
-
-const {
-  getCryptoCurrencyById,
-  formatCurrencyUnit,
-  parseCurrencyUnit
-} = require('@ledgerhq/live-common/lib/currencies')
-const {
-  getCurrencyBridge,
-  getAccountBridge
-} = require('@ledgerhq/live-common/lib/bridge')
+const { createInterface } = require('readline')
+const { getCryptoCurrencyById, formatCurrencyUnit, parseCurrencyUnit } = require('@ledgerhq/live-common/lib/currencies')
+const { getCurrencyBridge, getAccountBridge } = require('@ledgerhq/live-common/lib/bridge')
 const { registerTransportModule } = require('@ledgerhq/live-common/lib/hw')
 const TransportNodeHid = require('@ledgerhq/hw-transport-node-hid-noevents').default
 const implementLibcore = require('@ledgerhq/live-common/lib/libcore/platforms/nodejs').default
 const { setSupportedCurrencies } = require('@ledgerhq/live-common/lib/data/cryptocurrencies')
-// our small example is a script that takes 3 params.
-// example: node send.js bitcoin bc1abc..def 0.001]
+const config = require('./config.json')
 
-const config = {
-  currency: 'dash',
-  amount: '0.1',
-  name: 'Dash 1',
-  filePath: './Dash-Ledger-1592797899818'
-}
-
+const rl = createInterface(process.stdin, process.stdout)
 const currency = getCryptoCurrencyById(config.currency)
 const amount = parseCurrencyUnit(currency.units[0], config.amount)
-const deviceId = '' // in HID case
 
 // configure which coins to enable
 setSupportedCurrencies([config.currency])
@@ -48,6 +31,7 @@ registerTransportModule({
 
 const recipients = fs.readFileSync(config.filePath).toString().split('\n').filter(Boolean)
 recipients.shift()
+
 async function main (recipient) {
   // currency bridge is the interface to scan accounts of the device
   const currencyBridge = getCurrencyBridge(currency)
@@ -59,22 +43,33 @@ async function main (recipient) {
   const syncConfig = { paginationConfig: {} }
 
   // NB scanAccountsOnDevice returns an observable but we'll just get the first account as a promise.
-  const scannedAccount = await currencyBridge
-    .scanAccounts({ currency, syncConfig })
-    .pipe(
-      first(e => e.type === 'discovered' && e.account.name === config.name),
-      map(e => e.account)
-    )
-    .toPromise()
+  let scannedAccount
+  try {
+    scannedAccount = await currencyBridge
+      .scanAccounts({ currency, syncConfig })
+      .pipe(
+        first(e => e.type === 'discovered' && e.account.name === config.name),
+        map(e => e.account)
+      )
+      .toPromise()
+  } catch (err) {
+    console.log(err)
+  }
+
   // account bridge is the interface to sync and do transaction on our account
   const accountBridge = getAccountBridge(scannedAccount)
 
   // Minimal way to synchronize an account.
   // NB: our scannedAccount is already sync in fact, this is just for the example
-  const account = await accountBridge
-    .sync(scannedAccount, syncConfig)
-    .pipe(reduce((a, f) => f(a), scannedAccount))
-    .toPromise()
+  let account
+  try {
+    account = await accountBridge
+      .sync(scannedAccount, syncConfig)
+      .pipe(reduce((a, f) => f(a), scannedAccount))
+      .toPromise()
+  } catch (err) {
+    console.log(err)
+  }
   console.log(
     `Ledger Account: ${account.name} | Balance:  ${formatCurrencyUnit(account.unit, account.balance)}`
   )
@@ -95,23 +90,28 @@ async function main (recipient) {
     throw errors[0]
   }
 
-  // We're good now, we can sign the transaction with the device
-  const signedOperation = await accountBridge
-    .signOperation({ account, transaction: t, deviceId })
-    .pipe(
-      tap(e => console.log(e)), // log events
-      // there are many events. we just take the final signed
-      first(e => e.type === 'signed'),
-      map(e => e.signedOperation)
-    )
-    .toPromise()
+  let signedOperation
+  try {
+    // We're good now, we can sign the transaction with the device
+    signedOperation = await accountBridge
+      .signOperation({ account, transaction: t })
+      .pipe(
+        tap(e => console.log(e)), // log events
+        // there are many events. we just take the final signed
+        first(e => e.type === 'signed'),
+        map(e => e.signedOperation)
+      )
+      .toPromise()
+  } catch (err) {
+    return console.log(err)
+  }
 
   // We can then broadcast it
   const operation = await accountBridge.broadcast({ account, signedOperation })
 
   // the transaction is broadcasted!
   // the resulting operation is an "optimistic" response that can be prepended to our account.operations[]
-  console.log('broadcasted', operation)
+  console.log('Broadcasted', operation)
 }
 
 console.log('Config:')
@@ -119,15 +119,20 @@ console.log(config)
 console.log('Recipients:')
 console.log(recipients)
 
-rl.question('\nIs the configuration correct? [y/n]: ', function (answer) {
+rl.question('\nIs the configuration correct? [y/n]: ', async function (answer) {
   if (answer !== 'y') {
     console.log('Exiting')
-    process.exit(1)
-    return
+    return process.exit(1)
   }
+  console.log('Starting....')
   try {
-    main(recipients[0])
+    for (const addr of recipients) {
+      await main(addr)
+    }
+    console.log('Finished')
+    process.exit(1)
   } catch (err) {
     console.log(err)
+    process.exit(1)
   }
 })

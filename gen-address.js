@@ -1,14 +1,15 @@
 const Transport = require('@ledgerhq/hw-transport-node-hid').default
 const AppBtc = require('@ledgerhq/hw-app-btc').default
 const fs = require('fs')
-
+const config = require('./config.json')
 //= =============
-let index = 1
-const TOTAL = 5
-const HD_PATH = "44'/5'/0'/0/"
+const hdconfig = config.hd_path.split('/')
+let index = +hdconfig.pop()
+const TOTAL = config.generate_amount
+const HD_PATH = hdconfig.join('/') + '/'
 
 const file = () => {
-  const session = `./Ledger-Dash-${Date.now()}`
+  const session = `./Ledger-Dash-${Date.now()}.address`
   fs.appendFileSync(session, 'PATH: ' + HD_PATH + index + '\n')
 
   return {
@@ -27,7 +28,7 @@ const createAddress = async (ledger, index) => {
   const path = HD_PATH + index
   const result = await ledger.getWalletPublicKey(path)
   session.append(result.bitcoinAddress + '\n')
-  console.log(`Creating: Index: ${index} - ${result.bitcoinAddress}`)
+  console.log(`Creating: Index: ${path} - ${result.bitcoinAddress}`)
   return result.bitcoinAddress
 }
 
