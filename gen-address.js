@@ -40,7 +40,7 @@ createLedger()
   .then(async (ledger) => {
     console.log('Opened Ledger....')
     try {
-      for (index; index < TOTAL; index++) {
+      for (index; index <= TOTAL; index++) {
         await createAddress(ledger, index)
       }
     } catch (err) {
