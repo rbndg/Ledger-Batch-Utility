@@ -120,32 +120,35 @@ async function main (recipient) {
   return operation.hash
 }
 
+function txConfirm (txid) {
+  console.log('Checking Transaction Confirmation...')
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        console.log('Checking transaction confirmation : ' + txid)
+        const response = await got(`${config.explorer}/${txid}`)
+        const parsed = JSON.parse(response.body)
+        if (parsed.confirmations > 0) {
+          clearInterval(interval)
+          resolve()
+          return 
+        }
+      } catch (error) {
+        console.log('FAILED TO CHECK EXPLORER API')
+        console.log(error)
+        clearInterval(interval)
+        reject(error)
+        return
+      }
+    }, 60000)
+  })
+}
+
 console.log('Config:')
 console.log(config)
 console.log('Recipients:')
 console.log(recipients)
 
-function txConfirm (txid) {
-  console.log('Checking Transaction Confirmation...')
-  return new Promise((resolve, reject) => {
-    const interval = setInterval(async () => {
-	    try {
-        console.log('Checking transaction is confirmed: ' + txid)
-        const response = await got(`${config.explorer}/${txid}`)
-        const parsed = JSON.parse(response.body)
-        if (parsed.confirmations > 0) {
-          clearInterval(interval)
-          return resolve()
-        }
-	    } catch (error) {
-        console.log('FAILED TO CHECK EXPLORER API')
-        console.log(error)
-        clearInterval(interval)
-        reject(error)
-      }
-    }, 60000)
-  })
-}
 rl.question('\nIs the configuration correct? [y/n]: ', async function (answer) {
   if (answer !== 'y') {
     console.log('Exiting')
