@@ -11,8 +11,6 @@ const TransportNodeHid = require('@ledgerhq/hw-transport-node-hid-noevents').def
 const implementLibcore = require('@ledgerhq/live-common/lib/libcore/platforms/nodejs').default
 const { setSupportedCurrencies } = require('@ledgerhq/live-common/lib/data/cryptocurrencies')
 const config = require('./config.json')
-const { resolve } = require('path')
-const { rejects } = require('assert')
 
 const rl = createInterface(process.stdin, process.stdout)
 const currency = getCryptoCurrencyById(config.currency)
@@ -131,14 +129,13 @@ function txConfirm (txid) {
         if (parsed.confirmations > 0) {
           clearInterval(interval)
           resolve()
-          return 
+          return
         }
       } catch (error) {
         console.log('FAILED TO CHECK EXPLORER API')
         console.log(error)
         clearInterval(interval)
         reject(error)
-        return
       }
     }, 60000)
   })
