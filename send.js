@@ -2,6 +2,7 @@
 
 const { first, map, reduce, tap } = require('rxjs/operators')
 const fs = require('fs')
+const got = require('got');
 const { createInterface } = require('readline')
 const { getCryptoCurrencyById, formatCurrencyUnit, parseCurrencyUnit } = require('@ledgerhq/live-common/lib/currencies')
 const { getCurrencyBridge, getAccountBridge } = require('@ledgerhq/live-common/lib/bridge')
@@ -9,7 +10,9 @@ const { registerTransportModule } = require('@ledgerhq/live-common/lib/hw')
 const TransportNodeHid = require('@ledgerhq/hw-transport-node-hid-noevents').default
 const implementLibcore = require('@ledgerhq/live-common/lib/libcore/platforms/nodejs').default
 const { setSupportedCurrencies } = require('@ledgerhq/live-common/lib/data/cryptocurrencies')
-const config = require('./config.json')
+const config = require('./config.json');
+const { resolve } = require('path');
+const { rejects } = require('assert');
 
 const rl = createInterface(process.stdin, process.stdout)
 const currency = getCryptoCurrencyById(config.currency)
@@ -48,7 +51,7 @@ async function main (recipient) {
   let scannedAccount
   try {
     scannedAccount = await currencyBridge
-      .scanAccounts({ currency, syncConfig })
+    .scanAccounts({ currency, syncConfig })
       .pipe(
         first(e => e.type === 'discovered' && e.account.name === config.name),
         map(e => e.account)
@@ -114,6 +117,7 @@ async function main (recipient) {
   // the transaction is broadcasted!
   // the resulting operation is an "optimistic" response that can be prepended to our account.operations[]
   console.log('Broadcasted', operation)
+  return operation.hash
 }
 
 console.log('Config:')
@@ -121,6 +125,29 @@ console.log(config)
 console.log('Recipients:')
 console.log(recipients)
 
+
+
+function txConfirm(txid){
+  console.log("Checking Transaction Confirmation...")
+  return new Promise((resolve,reject)=>{
+    const interval = setInterval( async ()=>{
+	    try {
+        console.log("Checking transaction is confirmed: "+txid)
+        const response = await got(`${config.explorer}/${txid}`)
+        const parsed = JSON.parse(response.body)
+        if(parsed.confirmations > 0){
+          clearInterval(interval)
+          return resolve()
+        }
+	    } catch (error) {
+        console.log("FAILED TO CHECK EXPLORER API")
+        console.log(error)
+        clearInterval(interval)
+        reject(error)
+      }
+    }, 60000)
+  })
+}
 rl.question('\nIs the configuration correct? [y/n]: ', async function (answer) {
   if (answer !== 'y') {
     console.log('Exiting')
@@ -129,7 +156,12 @@ rl.question('\nIs the configuration correct? [y/n]: ', async function (answer) {
   console.log('Starting....')
   try {
     for (const addr of recipients) {
-      await main(addr)
+      const txid = await main(addr)
+      if(!txid){
+        return console.log("Transaction failed to broadcast")
+      }
+      await txConfirm(txid)
+      console.log("=== Transaction confirmed ===")
     }
     console.log('Finished')
     process.exit(1)
