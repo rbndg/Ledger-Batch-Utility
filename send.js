@@ -85,7 +85,7 @@ async function main (recipient) {
   // We can always get the status. used for form validation and meta info (like calculated fees)
   const status = await accountBridge.getTransactionStatus(account, t)
 
-  console.log({ amount: status.amount.toString(), recipient })
+  console.log({ amount: config.amount, base_amount: amount.toString(), recipient })
 
   // we can't broadcast the transaction if there are errors
   const errors = Object.values(status.errors)
