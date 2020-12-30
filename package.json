@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "@ledgerhq/hw-app-btc": "^5.17.0",
-    "@ledgerhq/hw-transport-node-hid": "^5.17.0",
+    "@ledgerhq/hw-app-eth": "^5.37.0",
+    "@ledgerhq/hw-transport-node-hid": "^5.36.0",
     "@ledgerhq/ledger-core": "^6.5.4",
     "@ledgerhq/live-common": "^12.34.0",
     "got": "^11.8.0",
