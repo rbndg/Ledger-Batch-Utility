@@ -13,7 +13,7 @@ const getEth2PubKey = async (index) => {
    */
   const path = `12381/3600/${index}/0`
   console.log(`Generating: ${path}`)
-  const key = await ethApp.getAddress(path,false)
+  const key = await ethApp.eth2GetPublicKey(path,false)
   console.log(`Success: ${path} : ${key.publicKey}`)
   return {
     path,
